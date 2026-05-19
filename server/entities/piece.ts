@@ -1,11 +1,51 @@
 import { Table } from "./table";
+
 export abstract class Piece {
+
+    // Color de la pieza
     private _color: string;
-    public constructor(color: string){
-        this._color = color; //white o black
+
+    // Indica si la pieza ya se movio
+    private _hasMoved: boolean;
+
+    public constructor(
+        color: string
+    ) {
+
+        // White o black
+        this._color = color;
+
+        // Inicialmente
+        // ninguna pieza
+        // se ha movido
+        this._hasMoved = false;
     }
-    get color(): string{
+
+    // Retorna color
+    get color(): string {
+
         return this._color;
     }
-    abstract getValidMovements(table: Table, initialPos: [number, number]): (Array<[number, number]>|null);
+
+    // Retorna si ya se movio
+    get hasMoved(): boolean {
+
+        return this._hasMoved;
+    }
+
+    // Marca la pieza como movida
+    set moved(
+        value: boolean
+    ) {
+
+        this._hasMoved = value;
+    }
+
+    abstract getValidMovements(
+        table: Table,
+        initialPos: [number, number]
+    ): (
+        Array<[number, number]>
+        | null
+    );
 }

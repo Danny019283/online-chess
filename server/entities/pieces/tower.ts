@@ -1,6 +1,6 @@
 import {Piece} from '../piece'
 import { Table } from '../table';
-class Tower extends Piece {
+export class Tower extends Piece {
     constructor(color: string){
         super(color);
     }

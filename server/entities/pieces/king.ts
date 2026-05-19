@@ -1,6 +1,8 @@
 import {Piece} from '../piece'
 import { Table } from '../table';
-class King extends Piece {
+import { Tower } from "./tower";
+
+export class King extends Piece {
     constructor(color: string){
         super(color);
     }
@@ -41,6 +43,67 @@ class King extends Piece {
   
     }
 
+    // Verifica posibles enroques
+private getCastlingMoves(
+    table: Table,
+    position: [number, number]
+): [number, number][] {
+
+    const moves:
+        [number, number][] = [];
+
+    // Si el rey ya se movio
+    if (this.hasMoved) {
+        return moves;
+    }
+
+    const row = position[0];
+
+    // Enroque corto
+    const rightTower =
+        table.pieces[row][7];
+
+    if (
+        rightTower &&
+        rightTower instanceof Tower &&
+        rightTower.color === this.color &&
+        !rightTower.hasMoved
+    ) {
+
+        if (
+            !table.pieces[row][5] &&
+            !table.pieces[row][6]
+        ) {
+
+            moves.push([row, 6]);
+        }
+    }
+
+    // Enroque largo
+    const leftTower =
+        table.pieces[row][0];
+
+    if (
+        leftTower &&
+        leftTower instanceof Tower &&
+        leftTower.color === this.color &&
+        !leftTower.hasMoved
+    ) {
+
+        if (
+            !table.pieces[row][1] &&
+            !table.pieces[row][2] &&
+            !table.pieces[row][3]
+        ) {
+
+            moves.push([row, 2]);
+        }
+    }
+
+    return moves;
+}
+
+
     getValidMovements(table: Table, position: [number, number]): (Array<[number, number]>|null) {
         const currentPiece: Piece|null = table.pieces[position[0]][position[1]];
         if(!currentPiece){
@@ -74,6 +137,9 @@ class King extends Piece {
         //Diagonal abajo derecha
         moves.push(...this.getMovesInDirection(table, position, 1,1));
 
+        // Agrega movimientos de enroque
+        moves.push( ...this.getCastlingMoves( table, position));
+
         //Verifica si la lista esta vacia
         if (moves.length === 0) {
             return null;
@@ -81,6 +147,4 @@ class King extends Piece {
         
         return moves;
     }
-    //enroque
-
 }

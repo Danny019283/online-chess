@@ -253,7 +253,7 @@ export function movePiece(table: any, session: Session, from: [number, number], 
         return false;
     }
 
-    session.checkVictory(piece, destinationPiece);
+    //session.checkVictory(piece, destinationPiece);
 
     // Guarda pieza original del destino
 const originalDestinationPiece:

@@ -24,6 +24,7 @@ export class GameService {
     const game = await this.gameRepository.findOne({ where: { id: gameId } });
     if (!game) throw new Error('Game not found');
     if (game.status !== 'waiting') throw new Error('Game is not waiting for players');
+    if (game.player1_id === player2Id) throw new Error('Cannot join your own game');
 
     game.player2_id = player2Id;
     game.status = 'active';
@@ -57,6 +58,11 @@ export class GameService {
 
     const moves = piece.getValidMovements(session.board, position);
     return moves || [];
+  }
+
+  async getWinner(gameId: string): Promise<number | null> {
+    const game = await this.getGame(gameId);
+    return game?.winner_id || null;
   }
 }
 

@@ -6,6 +6,7 @@ import connectPgSimple from 'connect-pg-simple';
 import { AppDataSource } from './database/connection';
 import authRoutes from './routes/authRoutes';
 import gameRoutes from './routes/gameRoutes';
+import { Pool } from 'pg';
 
 const app = express();
 
@@ -13,12 +14,17 @@ app.use(cors({ origin: 'http://localhost', credentials: true }));
 app.use(express.json());
 
 const pgSession = connectPgSimple(session);
+const pool = new Pool({
+  host: process.env.DB_HOST || 'localhost',
+  port: parseInt(process.env.DB_PORT || '5432'),
+  user: process.env.DB_USER || 'postgres',
+  password: process.env.DB_PASSWORD || 'postgres',
+  database: process.env.DB_NAME || 'chess_db',
+});
 
 app.use(
   session({
-    store: new pgSession({
-      pool: AppDataSource.getRepository('').manager.connection.driver.pool,
-    }),
+    store: new pgSession({ pool }),
     secret: process.env.SESSION_SECRET || 'dev_secret',
     resave: false,
     saveUninitialized: false,

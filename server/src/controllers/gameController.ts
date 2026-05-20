@@ -31,14 +31,14 @@ export class GameController {
       }
 
       const game = await gameService.joinGame(gameId, userId);
-      const session = gameService.getGameState(gameId);
+      const gameSession = gameService.getGameState(gameId);
 
-      if (!session) {
+      if (!gameSession) {
         res.status(404).json({ error: 'Game state not found' });
         return;
       }
 
-      const gameState = GameMapper.gameSessionToStateDTO(session, game, session.game);
+      const gameState = GameMapper.gameSessionToStateDTO(gameSession, game);
       res.status(200).json(gameState);
     } catch (error: any) {
       res.status(400).json({ error: error.message });
@@ -50,14 +50,14 @@ export class GameController {
       const { gameId } = req.params;
 
       const game = await gameService.getGame(gameId);
-      const session = gameService.getGameState(gameId);
+      const gameSession = gameService.getGameState(gameId);
 
-      if (!game || !session) {
+      if (!game || !gameSession) {
         res.status(404).json({ error: 'Game not found' });
         return;
       }
 
-      const gameState = GameMapper.gameSessionToStateDTO(session, game, session.game);
+      const gameState = GameMapper.gameSessionToStateDTO(gameSession, game);
       res.status(200).json(gameState);
     } catch (error: any) {
       res.status(500).json({ error: error.message });
@@ -83,14 +83,14 @@ export class GameController {
       const success = gameService.makeMove(gameId, [from.row, from.col], [to.row, to.col]);
 
       const game = await gameService.getGame(gameId);
-      const session = gameService.getGameState(gameId);
+      const gameSession = gameService.getGameState(gameId);
 
       const result: MoveResultDTO = {
         success,
       };
 
-      if (success && game && session) {
-        result.gameState = GameMapper.gameSessionToStateDTO(session, game, session.game);
+      if (success && game && gameSession) {
+        result.gameState = GameMapper.gameSessionToStateDTO(gameSession, game);
       } else if (!success) {
         result.reason = 'Invalid move';
       }

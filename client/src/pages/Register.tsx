@@ -8,6 +8,7 @@ function Register() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [mensaje, setMensaje] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
 
   async function register(e: React.FormEvent) {
     e.preventDefault();
@@ -17,6 +18,7 @@ function Register() {
       return;
     }
 
+    setIsLoading(true);
     try {
       await registerUser({ username, password });
 
@@ -24,13 +26,11 @@ function Register() {
       setTimeout(() => {
         navigate("/login");
       }, 800);
-    } catch {
-      // Temporal mientras el backend no esté listo
-      setMensaje("Registro temporal realizado, backend pendiente");
-
-      setTimeout(() => {
-        navigate("/login");
-      }, 800);
+    } catch (error: any) {
+      const errorMsg = error.response?.data?.error || "Error al registrarse";
+      setMensaje(errorMsg);
+    } finally {
+      setIsLoading(false);
     }
   }
 
@@ -44,6 +44,7 @@ function Register() {
           placeholder="Usuario"
           value={username}
           onChange={(e) => setUsername(e.target.value)}
+          disabled={isLoading}
         />
 
         <input
@@ -51,11 +52,14 @@ function Register() {
           placeholder="Contraseña"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
+          disabled={isLoading}
         />
 
         {mensaje && <p className="form-message">{mensaje}</p>}
 
-        <button type="submit">Registrarse</button>
+        <button type="submit" disabled={isLoading}>
+          {isLoading ? "Registrando..." : "Registrarse"}
+        </button>
 
         <p>
           ¿Ya tiene cuenta? <Link to="/login">Iniciar sesión</Link>

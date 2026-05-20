@@ -1,22 +1,24 @@
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
+import { createGame, joinGame } from "../api";
 
 function Lobby() {
   const navigate = useNavigate();
   const [roomId, setRoomId] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
 
-  const salasDisponibles = [
-    { codigo: "1025", jugadores: "1/2", estado: "Esperando rival" },
-    { codigo: "7841", jugadores: "1/2", estado: "Disponible" },
-    { codigo: "3390", jugadores: "2/2", estado: "En partida" },
-  ];
-
-  function crearPartida() {
-    const nuevaSala = Math.floor(1000 + Math.random() * 9000);
-    navigate(`/game/${nuevaSala}`);
+  async function crearPartida() {
+    setIsLoading(true);
+    try {
+      const response = await createGame();
+      navigate(`/game/${response.data.gameId}`);
+    } catch (error) {
+      alert("Error al crear partida");
+      setIsLoading(false);
+    }
   }
 
-  function unirsePartida(e: React.FormEvent) {
+  async function unirsePartida(e: React.FormEvent) {
     e.preventDefault();
 
     if (roomId.trim() === "") {
@@ -24,16 +26,15 @@ function Lobby() {
       return;
     }
 
-    navigate(`/game/${roomId}`);
-  }
-
-  function entrarSala(codigo: string, estado: string) {
-    if (estado === "En partida") {
-      alert("Esta sala ya está llena");
-      return;
+    setIsLoading(true);
+    try {
+      await joinGame(roomId);
+      navigate(`/game/${roomId}`);
+    } catch (error: any) {
+      const errorMsg = error.response?.data?.error || "Error al unirse a la partida";
+      alert(errorMsg);
+      setIsLoading(false);
     }
-
-    navigate(`/game/${codigo}`);
   }
 
   return (
@@ -49,7 +50,9 @@ function Lobby() {
         <div className="lobby-card">
           <h2>Crear partida</h2>
           <p>Genere una sala nueva y comparta el código con otro jugador.</p>
-          <button onClick={crearPartida}>Crear nueva sala</button>
+          <button onClick={crearPartida} disabled={isLoading}>
+            {isLoading ? "Creando..." : "Crear nueva sala"}
+          </button>
         </div>
 
         <div className="lobby-card">
@@ -61,43 +64,13 @@ function Lobby() {
               placeholder="Ejemplo: 1025"
               value={roomId}
               onChange={(e) => setRoomId(e.target.value)}
+              disabled={isLoading}
             />
 
-            <button type="submit">Unirse a sala</button>
+            <button type="submit" disabled={isLoading}>
+              {isLoading ? "Uniéndose..." : "Unirse a sala"}
+            </button>
           </form>
-        </div>
-
-        <div className="lobby-card lobby-table-card">
-          <h2>Salas disponibles</h2>
-
-          <table>
-            <thead>
-              <tr>
-                <th>Código</th>
-                <th>Jugadores</th>
-                <th>Estado</th>
-                <th>Acción</th>
-              </tr>
-            </thead>
-
-            <tbody>
-              {salasDisponibles.map((sala) => (
-                <tr key={sala.codigo}>
-                  <td>{sala.codigo}</td>
-                  <td>{sala.jugadores}</td>
-                  <td>{sala.estado}</td>
-                  <td>
-                    <button
-                      className="small-button"
-                      onClick={() => entrarSala(sala.codigo, sala.estado)}
-                    >
-                      Entrar
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
         </div>
       </section>
     </main>

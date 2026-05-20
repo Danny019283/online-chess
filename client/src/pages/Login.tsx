@@ -8,6 +8,7 @@ function Login() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [mensaje, setMensaje] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
 
   async function login(e: React.FormEvent) {
     e.preventDefault();
@@ -17,16 +18,20 @@ function Login() {
       return;
     }
 
+    setIsLoading(true);
     try {
-      await loginUser({ username, password });
+      const response = await loginUser({ username, password });
 
-      localStorage.setItem("user", username);
+      localStorage.setItem("user", JSON.stringify(response.data));
+      localStorage.setItem("userId", response.data.userId.toString());
+
+      setMensaje("");
       navigate("/lobby");
-    } catch {
-      // Temporal mientras el backend no esté listo
-      localStorage.setItem("user", username);
-      setMensaje("Ingreso temporal activado, backend pendiente");
-      navigate("/lobby");
+    } catch (error: any) {
+      const errorMsg = error.response?.data?.error || "Error al iniciar sesión";
+      setMensaje(errorMsg);
+    } finally {
+      setIsLoading(false);
     }
   }
 
@@ -40,6 +45,7 @@ function Login() {
           placeholder="Usuario"
           value={username}
           onChange={(e) => setUsername(e.target.value)}
+          disabled={isLoading}
         />
 
         <input
@@ -47,11 +53,14 @@ function Login() {
           placeholder="Contraseña"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
+          disabled={isLoading}
         />
 
         {mensaje && <p className="form-message">{mensaje}</p>}
 
-        <button type="submit">Entrar</button>
+        <button type="submit" disabled={isLoading}>
+          {isLoading ? "Ingresando..." : "Entrar"}
+        </button>
 
         <p>
           ¿No tiene cuenta? <Link to="/register">Registrarse</Link>

@@ -1,11 +1,13 @@
 import { useNavigate } from "react-router-dom";
 import { useState, type FormEvent } from "react";
-import { createGame, joinGame } from "../api";
+import { createGame, joinGame, deleteAccount } from "../api";
 
 function Lobby() {
   const navigate = useNavigate();
   const [roomId, setRoomId] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const rawUser = localStorage.getItem("user");
+  const currentUser = rawUser ? JSON.parse(rawUser) : null;
 
   async function crearPartida() {
     setIsLoading(true);
@@ -34,6 +36,21 @@ function Lobby() {
       const errorMsg = error.response?.data?.error || "Error al unirse a la partida";
       alert(errorMsg);
       setIsLoading(false);
+    }
+  }
+
+  async function eliminarCuenta() {
+    if (!confirm("¿Está seguro que desea eliminar su cuenta? Esta acción no se puede deshacer.")) {
+      return;
+    }
+
+    try {
+      await deleteAccount();
+      localStorage.removeItem("user");
+      localStorage.removeItem("userId");
+      navigate("/login");
+    } catch (error: any) {
+      alert("Error al eliminar la cuenta");
     }
   }
 
@@ -69,6 +86,23 @@ function Lobby() {
               {isLoading ? "Uniéndose..." : "Unirse a sala"}
             </button>
           </form>
+        </div>
+
+        <div className="lobby-card">
+          <h2>Eliminar cuenta</h2>
+          {currentUser ? (
+            <>
+              <p>Usuario actual: <strong>{currentUser.username}</strong></p>
+              <button
+                type="button"
+                onClick={eliminarCuenta}
+              >
+                Eliminar cuenta permanentemente
+              </button>
+            </>
+          ) : (
+            <p>Debe iniciar sesión para eliminar su cuenta.</p>
+          )}
         </div>
       </section>
     </main>

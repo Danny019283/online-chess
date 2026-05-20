@@ -1,7 +1,7 @@
 import 'reflect-metadata';
 import { DataSource } from 'typeorm';
-import { User } from '../core_entities/user';
-import { Session } from '../core_entities/session';
+import { User } from '../entities/user';
+import { Session } from '../entities/session';
 
 const synchronize =
   process.env.DB_SYNCHRONIZE === 'true' ||

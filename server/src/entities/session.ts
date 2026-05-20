@@ -1,5 +1,13 @@
-import { Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, PrimaryColumn } from 'typeorm';
 import { User } from './user';
+
+let nextRoomNumber = 1;
+
+export function generateRoomId(): string {
+    const num = nextRoomNumber.toString().padStart(3, '0');
+    nextRoomNumber++;
+    return `AJ${num}`;
+}
 
 export interface MoveRecord {
     from: { row: number; col: number };
@@ -11,7 +19,7 @@ export interface MoveRecord {
 
 @Entity('games')
 export class Session {
-    @PrimaryGeneratedColumn('uuid')
+    @PrimaryColumn({ type: 'varchar', length: 10 })
     id!: string;
 
     @ManyToOne(() => User, user => user.sessionsAsPlayer1)

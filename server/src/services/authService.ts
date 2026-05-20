@@ -1,5 +1,5 @@
 import { AppDataSource } from '../database/connection';
-import { User } from '../core_entities/user';
+import { User } from '../entities/user';
 import { hash, compare } from 'bcrypt';
 
 export class AuthService {
@@ -22,6 +22,10 @@ export class AuthService {
       throw new Error('Invalid username or password');
     }
 
+    if (user.hidden) {
+      throw new Error('Account has been deleted');
+    }
+
     const isPasswordValid = await compare(password, user.passwordHash);
     if (!isPasswordValid) {
       throw new Error('Invalid username or password');
@@ -32,6 +36,10 @@ export class AuthService {
 
   async getUserById(id: number): Promise<User | null> {
     return this.userRepository.findOne({ where: { id } });
+  }
+
+  async deleteAccount(id: number): Promise<void> {
+    await this.userRepository.update(id, { hidden: true });
   }
 }
 

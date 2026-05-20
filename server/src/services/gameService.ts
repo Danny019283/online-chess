@@ -1,20 +1,22 @@
 import { AppDataSource } from '../database/connection';
-import { Session } from '../core_entities/session';
+import { Session, generateRoomId } from '../entities/session';
 import { gameStateManager, GameSession } from './gameStateManager';
 
 export class GameService {
   private gameRepository = AppDataSource.getRepository(Session);
 
   async createGame(player1Id: number): Promise<string> {
+    const roomId = generateRoomId();
     const game = this.gameRepository.create({
+      id: roomId,
       player1_id: player1Id,
       status: 'waiting',
     });
 
     await this.gameRepository.save(game);
-    gameStateManager.createGame(game.id, player1Id);
+    gameStateManager.createGame(roomId, player1Id);
 
-    return game.id;
+    return roomId;
   }
 
   async joinGame(gameId: string, player2Id: number): Promise<Session> {
@@ -93,7 +95,7 @@ export class GameService {
     return true;
   }
 
-  getLegalMoves(gameId: string, position: [number, number]): [number, number][] {
+  getLegalMoves(gameId: string, userId: number, position: [number, number]): [number, number][] {
     const session = gameStateManager.getGame(gameId);
     if (!session) return [];
     if (!session.board.isInsideBoard(position[0], position[1])) return [];
@@ -101,8 +103,14 @@ export class GameService {
     const piece = session.board.pieces[position[0]][position[1]];
     if (!piece) return [];
 
-    const moves = piece.getValidMovements(session.board, position);
-    return moves || [];
+    const isPracticeMode = !session.player2Id && session.player1Id === userId;
+    if (!isPracticeMode) {
+      if (userId !== session.player1Id && userId !== session.player2Id) return [];
+      const userColor = userId === session.player1Id ? 'white' : 'black';
+      if (piece.color !== userColor || userColor !== session.currentTurn) return [];
+    }
+
+    return session.game.getLegalMovements(session.board, position);
   }
 
   async getWinner(gameId: string): Promise<number | null> {

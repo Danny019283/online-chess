@@ -100,6 +100,10 @@ export async function logoutUser() {
   return api.post("/auth/logout");
 }
 
+export async function deleteAccount() {
+  return api.delete("/auth/me");
+}
+
 // Game Endpoints
 export async function createGame() {
   return api.post<{ gameId: string }>("/games");

@@ -1,10 +1,11 @@
 type ChessBoardProps = {
   board: string[][];
   selectedSquare: [number, number] | null;
+  legalMoves: { row: number; col: number }[];
   onSquareClick: (row: number, col: number) => void;
 };
 
-function ChessBoard({ board, selectedSquare, onSquareClick }: ChessBoardProps) {
+function ChessBoard({ board, selectedSquare, legalMoves, onSquareClick }: ChessBoardProps) {
   const files = ["a", "b", "c", "d", "e", "f", "g", "h"];
 
   return (
@@ -17,6 +18,9 @@ function ChessBoard({ board, selectedSquare, onSquareClick }: ChessBoardProps) {
               selectedSquare &&
               selectedSquare[0] === rowIndex &&
               selectedSquare[1] === colIndex;
+            const isLegalMove = legalMoves.some(
+              (move) => move.row === rowIndex && move.col === colIndex,
+            );
 
             return (
               <div
@@ -24,7 +28,7 @@ function ChessBoard({ board, selectedSquare, onSquareClick }: ChessBoardProps) {
                 onClick={() => onSquareClick(rowIndex, colIndex)}
                 className={`square ${isLight ? "light-square" : "dark-square"} ${
                   isSelected ? "selected-square" : ""
-                }`}
+                } ${isLegalMove ? "legal-move-square" : ""}`}
               >
                 {colIndex === 0 && (
                   <span className="rank-label">{8 - rowIndex}</span>

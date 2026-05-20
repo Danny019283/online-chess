@@ -1,17 +1,17 @@
-import { Piece } from '../core_entities/piece';
-import { Board } from '../core_entities/table';
+import { Piece } from '../entities/piece';
+import { Board } from '../entities/table';
 import { GameSession } from '../services/gameStateManager';
-import { Session } from '../core_entities/session';
+import { Session } from '../entities/session';
 import { PieceDTO } from '../dtos/pieceDTO';
 import { GameStateDTO } from '../dtos/gameStateDTO';
 import { LegalMovesDTO } from '../dtos/legalMovesDTO';
 import { PositionDTO } from '../dtos/positionDTO';
-import { King } from '../core_entities/pieces/king';
-import { Queen } from '../core_entities/pieces/queen';
-import { Bishop } from '../core_entities/pieces/bishop';
-import { Tower } from '../core_entities/pieces/tower';
-import { Knight } from '../core_entities/pieces/knight';
-import { Pawn } from '../core_entities/pieces/pawn';
+import { King } from '../entities/pieces/king';
+import { Queen } from '../entities/pieces/queen';
+import { Bishop } from '../entities/pieces/bishop';
+import { Tower } from '../entities/pieces/tower';
+import { Knight } from '../entities/pieces/knight';
+import { Pawn } from '../entities/pieces/pawn';
 
 export class GameMapper {
   static getPieceType(piece: Piece): string {

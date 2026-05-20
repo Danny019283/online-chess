@@ -52,6 +52,23 @@ export class AuthController {
       res.status(200).json({ message: 'Logged out' });
     });
   }
+
+  async deleteAccount(req: Request, res: Response): Promise<void> {
+    try {
+      const userId = req.session.userId;
+      if (!userId) {
+        res.status(401).json({ error: 'Not authenticated' });
+        return;
+      }
+
+      await authService.deleteAccount(userId);
+      req.session.destroy(() => {
+        res.status(200).json({ message: 'Account deleted' });
+      });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  }
 }
 
 export const authController = new AuthController();

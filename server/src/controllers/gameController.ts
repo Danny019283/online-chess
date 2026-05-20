@@ -113,6 +113,12 @@ export class GameController {
     try {
       const { gameId } = req.params;
       const { row, col } = req.query;
+      const userId = (req as any).session.userId;
+
+      if (!userId) {
+        res.status(401).json({ error: 'Unauthorized' });
+        return;
+      }
 
       await gameService.refreshClock(gameId);
 
@@ -121,7 +127,7 @@ export class GameController {
         return;
       }
 
-      const moves = gameService.getLegalMoves(gameId, [parseInt(row), parseInt(col)]);
+      const moves = gameService.getLegalMoves(gameId, userId, [parseInt(row), parseInt(col)]);
       const position = { row: parseInt(row), col: parseInt(col) };
       const result = GameMapper.legalMovesToDTO(position, moves);
 

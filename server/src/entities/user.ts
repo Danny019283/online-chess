@@ -13,6 +13,9 @@ export class User {
     @Column()
     passwordHash!: string;
 
+    @Column({ default: false })
+    hidden!: boolean;
+
     @CreateDateColumn()
     createdAt!: Date;
 

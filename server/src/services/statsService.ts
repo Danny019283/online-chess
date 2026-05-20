@@ -1,6 +1,6 @@
 import { AppDataSource } from '../database/connection';
-import { Session } from '../core_entities/session';
-import { User } from '../core_entities/user';
+import { Session } from '../entities/session';
+import { User } from '../entities/user';
 
 export interface RankingPlayer {
   posicion: number;

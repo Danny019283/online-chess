@@ -1,7 +1,7 @@
-import { Board } from '../core_entities/table';
+import { Board } from '../entities/table';
 import { Game } from '../gameLogic/gameRules';
-import { Piece } from '../core_entities/piece';
-import { Session } from '../core_entities/session';
+import { Piece } from '../entities/piece';
+import { Session } from '../entities/session';
 
 const INITIAL_TIME_MS = 5 * 60 * 1000;
 
@@ -22,6 +22,7 @@ export interface GameSession {
 
 class GameStateManager {
   private games: Map<string, GameSession> = new Map();
+  private readonly MAX_WAITING_TIME_MS = 10 * 60 * 1000;
 
   createGame(gameId: string, player1Id: number): GameSession {
     const board = new Board();
@@ -46,6 +47,27 @@ class GameStateManager {
 
   getGame(gameId: string): GameSession | undefined {
     return this.games.get(gameId);
+  }
+
+  cleanupOldGames(): string[] {
+    const expired: string[] = [];
+    const now = Date.now();
+
+    for (const [gameId, session] of this.games.entries()) {
+      const age = now - session.createdAt.getTime();
+      const isWaitingExpired = !session.player2Id && age > this.MAX_WAITING_TIME_MS;
+      const isFinishedExpired = session.session.hasWinner() && age > this.MAX_WAITING_TIME_MS;
+
+      if (isWaitingExpired || isFinishedExpired) {
+        expired.push(gameId);
+      }
+    }
+
+    for (const gameId of expired) {
+      this.games.delete(gameId);
+    }
+
+    return expired;
   }
 
   setPlayer2(gameId: string, player2Id: number): void {
@@ -84,8 +106,16 @@ class GameStateManager {
     }
 
     const piece = board.pieces[from[0]][from[1]];
+    if (!piece) {
+      return false;
+    }
 
-    if (!piece || piece.color !== currentTurn) {
+    const userColor = userId === gameSession.player1Id ? 'white' : 'black';
+    if (!isPracticeMode && piece.color !== userColor) {
+      return false;
+    }
+
+    if (piece.color !== currentTurn) {
       return false;
     }
 
@@ -104,6 +134,10 @@ class GameStateManager {
 
   private applyClock(gameSession: GameSession): 'white' | 'black' | null {
     if (gameSession.session.hasWinner()) {
+      return null;
+    }
+
+    if (!gameSession.player2Id) {
       return null;
     }
 

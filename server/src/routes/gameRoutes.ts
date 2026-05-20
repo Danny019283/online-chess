@@ -15,6 +15,6 @@ router.post('/', authMiddleware, (req, res) => gameController.createGame(req, re
 router.post('/:gameId/join', authMiddleware, (req, res) => gameController.joinGame(req, res));
 router.post('/:gameId/move', authMiddleware, (req, res) => gameController.makeMove(req, res));
 router.get('/:gameId', (req, res) => gameController.getGameState(req, res));
-router.get('/:gameId/moves', (req, res) => gameController.getLegalMoves(req, res));
+router.get('/:gameId/moves', authMiddleware, (req, res) => gameController.getLegalMoves(req, res));
 
 export default router;

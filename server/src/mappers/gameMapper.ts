@@ -1,8 +1,7 @@
 import { Piece } from '../core_entities/piece';
 import { Board } from '../core_entities/table';
 import { GameSession } from '../services/gameStateManager';
-import { GameEntity } from '../entities/GameEntity';
-import { Game } from '../gameLogic/gameRules';
+import { Session } from '../core_entities/session';
 import { PieceDTO } from '../dtos/pieceDTO';
 import { GameStateDTO } from '../dtos/gameStateDTO';
 import { LegalMovesDTO } from '../dtos/legalMovesDTO';
@@ -39,13 +38,23 @@ export class GameMapper {
 
   static gameSessionToStateDTO(
     gameSession: GameSession,
-    gameEntity: GameEntity,
+    gameEntity: Session,
   ): GameStateDTO {
     const board = this.boardToDTO(gameSession.board);
     const game = gameSession.game;
     const isCheckWhite = game.isCheck(gameSession.board, 'white');
     const isCheckBlack = game.isCheck(gameSession.board, 'black');
     const isCheckmate = game.isCheckmate(gameSession.board, gameSession.currentTurn);
+    const winner = gameSession.session.getWinner() || null;
+    const winnerName = winner
+      ? winner === 'white'
+        ? gameEntity.player1.username
+        : gameEntity.player2?.username || gameEntity.player1.username
+      : gameEntity.winner_id
+        ? gameEntity.winner_id === gameEntity.player1_id
+          ? gameEntity.player1.username
+          : gameEntity.player2?.username || null
+        : null;
 
     return {
       id: gameEntity.id,
@@ -60,8 +69,11 @@ export class GameMapper {
         : null,
       check: gameSession.currentTurn === 'white' ? isCheckWhite : isCheckBlack,
       checkmate: isCheckmate,
-      winner: gameSession.session.getWinner() || null,
+      winner,
+      winnerName,
       status: gameEntity.status as any,
+      whiteTimeMs: gameSession.remainingTimeMs.white,
+      blackTimeMs: gameSession.remainingTimeMs.black,
     };
   }
 

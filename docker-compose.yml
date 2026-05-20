@@ -28,16 +28,10 @@ services:
     ports:
       - "3000:3000"
     depends_on:
-      postgres:
-        condition: service_started
+      - postgres
     networks:
       - chess-network
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3000/api/health"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 20s
+    command: npm run dev
 
   frontend:
     build:
@@ -46,8 +40,7 @@ services:
     ports:
       - "80:80"
     depends_on:
-      backend:
-        condition: service_healthy
+      - backend
     networks:
       - chess-network
 

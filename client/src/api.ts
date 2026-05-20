@@ -45,7 +45,10 @@ export type GameStateDTO = {
   check: boolean;
   checkmate: boolean;
   winner: string | null;
+  winnerName: string | null;
   status: 'waiting' | 'active' | 'finished';
+  whiteTimeMs: number;
+  blackTimeMs: number;
 };
 
 export type MoveDTO = {
@@ -75,7 +78,7 @@ export type RankingPlayer = {
 };
 
 export type MatchHistory = {
-  id: number;
+  id: string;
   jugador1: string;
   jugador2: string;
   resultado: string;

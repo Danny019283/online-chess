@@ -49,6 +49,7 @@ export class GameController {
     try {
       const { gameId } = req.params;
 
+      await gameService.refreshClock(gameId);
       const game = await gameService.getGame(gameId);
       const gameSession = gameService.getGameState(gameId);
 
@@ -112,6 +113,8 @@ export class GameController {
     try {
       const { gameId } = req.params;
       const { row, col } = req.query;
+
+      await gameService.refreshClock(gameId);
 
       if (typeof row !== 'string' || typeof col !== 'string') {
         res.status(400).json({ error: 'Invalid position' });

@@ -1,45 +1,72 @@
-export class Session {
+import { Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
+import { User } from './user';
 
-    // Jugador 1
-    private player1: string;
-    // Jugador 2
-    private player2: string;
-    // Ganador de la partida
+export interface MoveRecord {
+    from: { row: number; col: number };
+    to: { row: number; col: number };
+    userId: number;
+    color: 'white' | 'black';
+    movedAt: string;
+}
+
+@Entity('games')
+export class Session {
+    @PrimaryGeneratedColumn('uuid')
+    id!: string;
+
+    @ManyToOne(() => User, user => user.sessionsAsPlayer1)
+    @JoinColumn({ name: 'player1_id' })
+    player1!: User;
+
+    @Column()
+    player1_id!: number;
+
+    @ManyToOne(() => User, user => user.sessionsAsPlayer2, { nullable: true })
+    @JoinColumn({ name: 'player2_id' })
+    player2?: User;
+
+    @Column({ nullable: true })
+    player2_id?: number;
+
+    @Column('simple-json', { default: '[]' })
+    boardState!: string;
+
+    @Column({ default: 'waiting' })
+    status!: 'waiting' | 'active' | 'finished';
+
+    @Column({ nullable: true })
+    winner_id?: number;
+
+    @Column('simple-json', { default: '[]' })
+    moves!: MoveRecord[];
+
+    @CreateDateColumn()
+    createdAt!: Date;
+
+    private runtimePlayer1: string;
+    private runtimePlayer2: string;
     private winner: string;
 
-    // Constructor de la sesion
-    constructor(player1: string,player2: string) {
-
-        this.player1 = player1;
-        this.player2 = player2;
-
-        // Inicialmente no hay ganador
+    constructor(player1 = '', player2 = '') {
+        this.runtimePlayer1 = player1;
+        this.runtimePlayer2 = player2;
         this.winner = '';
     }
 
-    // Guarda el ganador
-    set _winner(
-        winner: string
-    ) {
+    set _winner(winner: string) {
         this.winner = winner;
     }
 
-    // Retorna el ganador
     getWinner(): string {
         return this.winner;
     }
 
-    // Verifica si ya existe un ganador
     hasWinner(): boolean {
         return this.winner !== '';
     }
 
-    // Verifica condicion de victoria
-    // Metodo temporal para evitar errores ya que ahora se usa jaque mate
-    checkVictory(
-        piece: any,
-        destinationPiece: any
-    ): void {
-        // No se usa de momento
+    checkVictory(piece: unknown, destinationPiece: unknown): void {
+        void piece;
+        void destinationPiece;
     }
 }

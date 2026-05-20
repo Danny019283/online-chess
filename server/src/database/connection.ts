@@ -1,7 +1,7 @@
 import 'reflect-metadata';
 import { DataSource } from 'typeorm';
-import { UserEntity } from '../entities/UserEntity';
-import { GameEntity } from '../entities/GameEntity';
+import { User } from '../core_entities/user';
+import { Session } from '../core_entities/session';
 
 const synchronize =
   process.env.DB_SYNCHRONIZE === 'true' ||
@@ -16,5 +16,5 @@ export const AppDataSource = new DataSource({
   database: process.env.DB_NAME || 'chess_db',
   synchronize,
   logging: false,
-  entities: [UserEntity, GameEntity],
+  entities: [User, Session],
 });

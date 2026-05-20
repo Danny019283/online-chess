@@ -9,5 +9,8 @@ export interface GameStateDTO {
   check: boolean;
   checkmate: boolean;
   winner: string | null;
+  winnerName: string | null;
   status: 'waiting' | 'active' | 'finished';
+  whiteTimeMs: number;
+  blackTimeMs: number;
 }

@@ -1,6 +1,0 @@
-export interface JoinGameDTO {
-
-    gameId: string;
-
-    username: string;
-}

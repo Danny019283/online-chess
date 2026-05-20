@@ -1,11 +1,11 @@
 import { AppDataSource } from '../database/connection';
-import { UserEntity } from '../entities/UserEntity';
+import { User } from '../core_entities/user';
 import { hash, compare } from 'bcrypt';
 
 export class AuthService {
-  private userRepository = AppDataSource.getRepository(UserEntity);
+  private userRepository = AppDataSource.getRepository(User);
 
-  async register(username: string, password: string): Promise<UserEntity> {
+  async register(username: string, password: string): Promise<User> {
     const existingUser = await this.userRepository.findOne({ where: { username } });
     if (existingUser) {
       throw new Error('Username already exists');
@@ -16,7 +16,7 @@ export class AuthService {
     return this.userRepository.save(user);
   }
 
-  async login(username: string, password: string): Promise<UserEntity> {
+  async login(username: string, password: string): Promise<User> {
     const user = await this.userRepository.findOne({ where: { username } });
     if (!user) {
       throw new Error('Invalid username or password');
@@ -30,7 +30,7 @@ export class AuthService {
     return user;
   }
 
-  async getUserById(id: number): Promise<UserEntity | null> {
+  async getUserById(id: number): Promise<User | null> {
     return this.userRepository.findOne({ where: { id } });
   }
 }

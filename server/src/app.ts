@@ -5,6 +5,7 @@ import session from 'express-session';
 import connectPgSimple from 'connect-pg-simple';
 import authRoutes from './routes/authRoutes';
 import gameRoutes from './routes/gameRoutes';
+import statsRoutes from './routes/statsRoutes';
 import { Pool } from 'pg';
 
 const app = express();
@@ -55,6 +56,7 @@ app.use(
 
 app.use('/api/auth', authRoutes);
 app.use('/api/games', gameRoutes);
+app.use('/api', statsRoutes);
 
 app.get('/', (req, res) => {
   res.json({ message: 'Welcome to Chess API' });

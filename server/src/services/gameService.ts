@@ -1,9 +1,9 @@
 import { AppDataSource } from '../database/connection';
-import { GameEntity } from '../entities/GameEntity';
+import { Session } from '../core_entities/session';
 import { gameStateManager, GameSession } from './gameStateManager';
 
 export class GameService {
-  private gameRepository = AppDataSource.getRepository(GameEntity);
+  private gameRepository = AppDataSource.getRepository(Session);
 
   async createGame(player1Id: number): Promise<string> {
     const game = this.gameRepository.create({
@@ -17,7 +17,7 @@ export class GameService {
     return game.id;
   }
 
-  async joinGame(gameId: string, player2Id: number): Promise<GameEntity> {
+  async joinGame(gameId: string, player2Id: number): Promise<Session> {
     const game = await this.gameRepository.findOne({ where: { id: gameId } });
     if (!game) throw new Error('Game not found');
     if (game.status !== 'waiting') throw new Error('Game is not waiting for players');
@@ -37,11 +37,18 @@ export class GameService {
     return updatedGame;
   }
 
-  async getGame(gameId: string): Promise<GameEntity | null> {
+  async getGame(gameId: string): Promise<Session | null> {
     return this.gameRepository.findOne({
       where: { id: gameId },
       relations: ['player1', 'player2'],
     });
+  }
+
+  async refreshClock(gameId: string): Promise<void> {
+    const winner = gameStateManager.refreshClock(gameId);
+    if (!winner) return;
+
+    await this.finishGameByWinnerColor(gameId, winner);
   }
 
   getGameState(gameId: string): GameSession | undefined {
@@ -49,15 +56,37 @@ export class GameService {
   }
 
   async makeMove(gameId: string, userId: number, from: [number, number], to: [number, number]): Promise<boolean> {
+    await this.refreshClock(gameId);
+    const gameSession = gameStateManager.getGame(gameId);
+    if (gameSession?.session.hasWinner()) return false;
+
+    const movingColor = gameSession?.currentTurn;
     const success = gameStateManager.makeMove(gameId, userId, from, to);
     if (!success) return false;
 
     const game = await this.gameRepository.findOne({ where: { id: gameId } });
     const session = gameStateManager.getGame(gameId);
 
+    if (game && movingColor) {
+      const moves = Array.isArray(game.moves) ? game.moves : [];
+      game.moves = [
+        ...moves,
+        {
+          from: { row: from[0], col: from[1] },
+          to: { row: to[0], col: to[1] },
+          userId,
+          color: movingColor,
+          movedAt: new Date().toISOString(),
+        },
+      ];
+    }
+
     if (game && session?.session.hasWinner()) {
       game.status = 'finished';
-      game.winner_id = session.session.getWinner() === 'white' ? session.player1Id : session.player2Id;
+      game.winner_id = this.getWinnerIdByColor(session, session.session.getWinner() as 'white' | 'black');
+    }
+
+    if (game) {
       await this.gameRepository.save(game);
     }
 
@@ -79,6 +108,21 @@ export class GameService {
   async getWinner(gameId: string): Promise<number | null> {
     const game = await this.getGame(gameId);
     return game?.winner_id || null;
+  }
+
+  private async finishGameByWinnerColor(gameId: string, winner: 'white' | 'black'): Promise<void> {
+    const game = await this.gameRepository.findOne({ where: { id: gameId } });
+    const session = gameStateManager.getGame(gameId);
+    if (!game || !session) return;
+
+    game.status = 'finished';
+    game.winner_id = this.getWinnerIdByColor(session, winner);
+    await this.gameRepository.save(game);
+  }
+
+  private getWinnerIdByColor(session: GameSession, winner: 'white' | 'black'): number {
+    if (winner === 'white') return session.player1Id;
+    return session.player2Id || session.player1Id;
   }
 }
 

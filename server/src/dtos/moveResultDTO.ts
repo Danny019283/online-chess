@@ -1,0 +1,7 @@
+import { GameStateDTO } from './gameStateDTO';
+
+export interface MoveResultDTO {
+  success: boolean;
+  reason?: string;
+  gameState?: GameStateDTO;
+}

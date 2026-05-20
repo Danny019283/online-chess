@@ -1,5 +1,5 @@
 import { Piece } from '../piece'
-import { Table } from '../table';
+import { Board } from '../board';
 class Pawn extends Piece {
     private hasMoved: boolean;
     private hasInitialLargeMove: boolean;
@@ -8,10 +8,10 @@ class Pawn extends Piece {
         this.hasMoved = false;
         this.hasInitialLargeMove = false;
     }
-    getValidMovements(table: Table, initialPos: [number, number]): (Array<[number, number]> | null) {
+    getValidMovements(table: Board, initialPos: [number, number]): (Array<[number, number]> | null) {
         return null;
     }
-    getFirstMove(table: Table, initialPos: [number, number]): (Array<[number, number]> | null) {
+    getFirstMove(table: Board, initialPos: [number, number]): (Array<[number, number]> | null) {
         //orientación por si es negra o blanca
         let orientation = 1;
         //pieza a mover
@@ -41,7 +41,7 @@ class Pawn extends Piece {
         }
         return validmoves;
     }
-    getNormalMove(table: Table, initialPos: [number, number]): ([number, number] | null) {
+    getNormalMove(table: Board, initialPos: [number, number]): ([number, number] | null) {
         //orientación por si es negra o blanca
         let orientation = 1;
         //pieza a mover
@@ -64,7 +64,7 @@ class Pawn extends Piece {
         }
         return coordsOnTable;
     }
-    getCaptureMoves(table: Table, initialPos: [number, number]): (Array<[number, number]> | null) {
+    getCaptureMoves(table: Board, initialPos: [number, number]): (Array<[number, number]> | null) {
         //orientación por si es negra o blanca
         let orientation = 1;
         //pieza a mover
@@ -95,7 +95,7 @@ class Pawn extends Piece {
         return validCaptures;
     }
     //falta arreglar cosas
-    getPassantCapture(table: Table, initialPos: [number, number]): (Array<[number, number]> | null) {
+    getPassantCapture(table: Board, initialPos: [number, number]): (Array<[number, number]> | null) {
         //si están en posiciones donde captura al paso no esta permitido retornar
         if (initialPos[1] != 5 && initialPos[1] != 4) {
             return null;
@@ -140,7 +140,7 @@ class Pawn extends Piece {
         }
         return validCaptures;
     }
-    private haveOpponentAdyacentPawn(table: Table, currentPos: [number, number], orientation: number): boolean{
+    private haveOpponentAdyacentPawn(table: Board, currentPos: [number, number], orientation: number): boolean{
         //calcula peón adyacente
         const adyacentPiece: Piece | null = table.pieces[currentPos[0]+1*orientation][currentPos[1]];
         //saber si hay un peón adyacente
@@ -158,7 +158,7 @@ class Pawn extends Piece {
         }
         return true;
     }
-    private haveBlockingPiece(table: Table, coordsCapture: [number, number]): boolean{
+    private haveBlockingPiece(table: Board, coordsCapture: [number, number]): boolean{
         //validar que este dentro del tablero    
         const blockingPiece: Piece|null = table.pieces[coordsCapture[0]][coordsCapture[1]];
         if (!blockingPiece){

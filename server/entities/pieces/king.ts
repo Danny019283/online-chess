@@ -1,27 +1,21 @@
 import {Piece} from '../piece'
-import { Table } from '../table';
-import { Tower } from "./tower";
+import { Board } from '../board';
+import { Tower } from "../tower";
 
 export class King extends Piece {
     constructor(color: string){
         super(color);
     }
 
-    //Limites dentro del tablero
-    private isInsideBoard(row: number, col: number): boolean {
-        return row >= 0 && row < 8 && col >= 0 && col < 8;
-
-    }
-
     //Movimientos posibles del rey en una sola direccion
-    private getMovesInDirection(table: Table, position: [number, number], rowDirection: number, colDirection: number) : [number, number][]{
+    private getMovesInDirection(table: Board, position: [number, number], rowDirection: number, colDirection: number) : [number, number][]{
         const moves: [number, number][] = [];
 
         let row = position[0] + rowDirection;
         let col = position[1] + colDirection;
 
         //El rey solo puede moverse una casilla
-        if (this.isInsideBoard(row, col)) {
+        if (table.isInsideBoard(row, col)) {
             //Revisa si hay una pieza
             const piece: Piece | null = table.pieces[row][col];
 
@@ -45,7 +39,7 @@ export class King extends Piece {
 
     // Verifica posibles enroques
 private getCastlingMoves(
-    table: Table,
+    table: Board,
     position: [number, number]
 ): [number, number][] {
 
@@ -104,7 +98,7 @@ private getCastlingMoves(
 }
 
 
-    getValidMovements(table: Table, position: [number, number]): (Array<[number, number]>|null) {
+    getValidMovements(table: Board, position: [number, number]): (Array<[number, number]>|null) {
         const currentPiece: Piece|null = table.pieces[position[0]][position[1]];
         if(!currentPiece){
             return null;

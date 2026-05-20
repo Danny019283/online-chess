@@ -1,11 +1,11 @@
 import { Piece } from "../piece";
-import { Table } from "../table";
+import { Board } from "../board";
 
 class Knight extends Piece{
     constructor(color: string){
         super(color);
     }
-    getValidMovements(table: Table, initialPos: [number, number]): (Array<[number, number]> | null) {
+    getValidMovements(table: Board, initialPos: [number, number]): (Array<[number, number]> | null) {
         //pieza a mover
         const currentPiece: Piece|null = table.pieces[initialPos[0]][initialPos[1]];
         if(!currentPiece){

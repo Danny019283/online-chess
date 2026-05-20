@@ -1,4 +1,4 @@
-import { Table } from "./table";
+import { Board } from ".../board";
 
 export abstract class Piece {
 
@@ -42,7 +42,7 @@ export abstract class Piece {
     }
 
     abstract getValidMovements(
-        table: Table,
+        table: Board,
         initialPos: [number, number]
     ): (
         Array<[number, number]>

@@ -6,6 +6,7 @@ declare module 'connect-pg-simple' {
     tableName?: string;
     schemaName?: string;
     ttl?: number;
+    createTableIfMissing?: boolean;
   }
 
   function connectPgSimple(session: any): any;

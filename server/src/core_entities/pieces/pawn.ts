@@ -1,183 +1,138 @@
-import { Piece } from '../piece'
+import { Piece } from '../piece';
 import { Board } from '../table';
+
 export class Pawn extends Piece {
     public hasInitialLargeMove: boolean;
+
     constructor(color: string) {
         super(color);
         this.hasInitialLargeMove = false;
     }
-    getValidMovements(table: Board, initialPos: [number, number]): (Array<[number, number]> | null) {
-        return null;
-    }
-    getFirstMove(table: Board, initialPos: [number, number]): (Array<[number, number]> | null) {
-        //orientación por si es negra o blanca
-        let orientation = 1;
-        //pieza a mover
-        const currentPiece: Piece | null = table.pieces[initialPos[0]][initialPos[1]];
-        if (!currentPiece) {
-            return null;
-        }
-        //calcula orientación de la pieza en y
-        if (currentPiece.color == 'black') {
-            orientation *= orientation * -1;
-        }
-        const validmoves: [number, number][] = [];
-        //calcula el siguiente movimiento, si no existe dentro del tablero retorna
-        const coordsFirstSquare: [number, number]|null = this.calculateMove(initialPos, orientation, 0, 1);
-        if(coordsFirstSquare){
-            const blockingPiece1: Piece | null = table.pieces[coordsFirstSquare[0]][coordsFirstSquare[1]];
-            if(!blockingPiece1){
-                validmoves.push(coordsFirstSquare)
-            }
-        }
-        const coordsSecondSquare: [number, number]|null = this.calculateMove(initialPos, orientation, 0, 2);
-        if(coordsSecondSquare){
-            const blockingPiece2: Piece | null = table.pieces[coordsSecondSquare[0]][coordsSecondSquare[1]];
-            if(!blockingPiece2){
-                validmoves.push(coordsSecondSquare);
-            }
-        }
-        return validmoves;
-    }
-    getNormalMove(table: Board, initialPos: [number, number]): ([number, number] | null) {
-        //orientación por si es negra o blanca
-        let orientation = 1;
-        //pieza a mover
-        const currentPiece: Piece | null = table.pieces[initialPos[0]][initialPos[1]];
-        if (!currentPiece) {
-            return null;
-        }
-        if (currentPiece.color == 'black') {
-            orientation *= orientation * -1;
-        }
-        //calcula el siguiente movimiento, si no existe dentro del tablero retorna
-        const coordsOnTable: [number, number]|null = this.calculateMove(initialPos, orientation, 0, 1);
-        if(!coordsOnTable){
-            return null;
-        }
-        //calcula si hay piezas bloqueando el camino
-        const blockingPiece: Piece | null = table.pieces[coordsOnTable[0]][coordsOnTable[1]];
-        if (blockingPiece) {
-            return null;
-        }
-        return coordsOnTable;
-    }
-    getCaptureMoves(table: Board, initialPos: [number, number]): (Array<[number, number]> | null) {
-        //orientación por si es negra o blanca
-        let orientation = 1;
-        //pieza a mover
-        const currentPiece: Piece | null = table.pieces[initialPos[0]][initialPos[1]];
-        if (!currentPiece) {
-            return null;
-        }
-        const validCaptures: [number, number][] = [];
-        //calcula la si hay un casilla a la derecha
-        const coordsRightUpSquare: [number, number]|null = this.calculateMove(initialPos, orientation, 1, 1);
-        if(coordsRightUpSquare){
-            this.haveOpponentAdyacentPawn(table, initialPos, orientation);
-            const adyacentPieceUpRight: Piece | null = table.pieces[coordsRightUpSquare[0]][coordsRightUpSquare[1]];
-            //si hay un oponente contrario es un movimiento valido
-            if (adyacentPieceUpRight && adyacentPieceUpRight.color != this.color) {
-                validCaptures.push(coordsRightUpSquare);
-            }
-        }
-        //calcula la si hay un casilla a la izquierda
-        const coordsLeftSquare: [number, number]|null = this.calculateMove(initialPos, orientation, -1, 1);
-        if(coordsLeftSquare){
-            const adyacentPieceUpLeft: Piece | null = table.pieces[coordsLeftSquare[0]][coordsLeftSquare[1]];
-            //si hay un oponente contrario es un movimiento valido
-            if (adyacentPieceUpLeft && adyacentPieceUpLeft.color != this.color) {
-                validCaptures.push(coordsLeftSquare);
-            }
-        }
-        return validCaptures;
-    }
-    //falta arreglar cosas
-    getPassantCapture(table: Board, initialPos: [number, number]): (Array<[number, number]> | null) {
-        //si están en posiciones donde captura al paso no esta permitido retornar
-        if (initialPos[1] != 5 && initialPos[1] != 4) {
-            return null;
-        }
-        //pieza a mover
-        const currentPiece: Piece | null = table.pieces[initialPos[0]][initialPos[1]];
-        if (!currentPiece) {
-            return null;
-        }
-        //valida que este en la fila corecta según el color
-        if (currentPiece.color == 'black' && initialPos[1] != 4) {
-            return null;
-        }
-        if (currentPiece.color == 'white' && initialPos[1] != 4) {
-            return null;
-        }
-        //orientación en y por si es negra o blanca
-        let orientation = 1;
-        if (currentPiece.color == 'black') {
-            orientation *= orientation * -1;
-        }
-        const validCaptures: [number, number][] = [];
-        //saber si hay peon rival que hizo el saque en largo en alguno de los lados
-        //izquierda
-        if(this.haveOpponentAdyacentPawn(table, initialPos, -1)){
-            const coordsCaptureLeft: [number, number]|null = this.calculateMove(initialPos, orientation, -1, 1);
-            //validar que esta dentro del tablero
-            if(coordsCaptureLeft){
-                if(!this.haveBlockingPiece(table, coordsCaptureLeft)){
-                    validCaptures.push(coordsCaptureLeft);
-                }
-            }
-        }
-        //derecha
-        if(this.haveOpponentAdyacentPawn(table, initialPos, 1)){
-            const coordsCaptureRight: [number, number]|null = this.calculateMove(initialPos, orientation, 1, 1);
-            if(coordsCaptureRight){
-                if(!this.haveBlockingPiece(table, coordsCaptureRight)){
-                    validCaptures.push(coordsCaptureRight);
-                }
-            }
-        }
-        return validCaptures;
-    }
-    private haveOpponentAdyacentPawn(table: Board, currentPos: [number, number], orientation: number): boolean{
-        //calcula peón adyacente
-        const adyacentPiece: Piece | null = table.pieces[currentPos[0]+1*orientation][currentPos[1]];
-        //saber si hay un peón adyacente
-        if(!adyacentPiece){
-            return false;
-        }
-        //si las piezas adyacentes no son Peones retornar
-        if (!(adyacentPiece instanceof Pawn)) {
-            return false;
-        }
-        const pawn: Pawn = adyacentPiece;
-        //el peon debe ser oponente y haber realizado el saque en largo
-        if(pawn.color != this.color || !pawn.hasInitialLargeMove){
-            return false;
-        }
-        return true;
-    }
-    private haveBlockingPiece(table: Board, coordsCapture: [number, number]): boolean{
-        //validar que este dentro del tablero    
-        const blockingPiece: Piece|null = table.pieces[coordsCapture[0]][coordsCapture[1]];
-        if (!blockingPiece){
-            return false;
-        }
-        return true;
-    }
-    //Limites dentro del tablero
-    private isInsideBoard(row: number, col: number): boolean {
-        return row >= 0 && row < 8 && col >= 0 && col < 8;
 
+    getValidMovements(table: Board, initialPos: [number, number]): Array<[number, number]> | null {
+        const moves = [
+            ...(this.hasMoved ? this.getNormalMoves(table, initialPos) : this.getFirstMove(table, initialPos) || []),
+            ...(this.getCaptureMoves(table, initialPos) || []),
+        ];
+
+        return moves.length > 0 ? moves : null;
     }
-    private calculateMove(initialPos: [number, number], orientationY: number, 
-        xOffSet: number, yOffSet: number): [number, number]|null{
-        //calcula el posible movimiento
-        const coordXOnTable: number = initialPos[0]+xOffSet;
-        const coordYOnTable: number = initialPos[1]+(yOffSet * orientationY);
-        //saber si el posible movimiento esta dentro de los limites del tablero
-        if(this.isInsideBoard(coordXOnTable, coordYOnTable)){
+
+    getFirstMove(table: Board, initialPos: [number, number]): Array<[number, number]> | null {
+        const currentPiece = table.pieces[initialPos[0]][initialPos[1]];
+        if (!currentPiece) {
             return null;
         }
-        return [coordXOnTable, coordYOnTable];
+
+        const direction = this.getDirection(currentPiece.color);
+        const moves: [number, number][] = [];
+        const firstSquare = this.calculateMove(table, initialPos, direction, 0);
+
+        if (firstSquare && !table.pieces[firstSquare[0]][firstSquare[1]]) {
+            moves.push(firstSquare);
+
+            const secondSquare = this.calculateMove(table, initialPos, direction * 2, 0);
+            if (secondSquare && !table.pieces[secondSquare[0]][secondSquare[1]]) {
+                moves.push(secondSquare);
+            }
+        }
+
+        return moves.length > 0 ? moves : null;
     }
-} 
+
+    getNormalMove(table: Board, initialPos: [number, number]): [number, number] | null {
+        return this.getNormalMoves(table, initialPos)[0] || null;
+    }
+
+    getCaptureMoves(table: Board, initialPos: [number, number]): Array<[number, number]> | null {
+        const currentPiece = table.pieces[initialPos[0]][initialPos[1]];
+        if (!currentPiece) {
+            return null;
+        }
+
+        const direction = this.getDirection(currentPiece.color);
+        const moves: [number, number][] = [];
+
+        for (const colOffset of [-1, 1]) {
+            const target = this.calculateMove(table, initialPos, direction, colOffset);
+            if (!target) {
+                continue;
+            }
+
+            const targetPiece = table.pieces[target[0]][target[1]];
+            if (targetPiece && targetPiece.color !== this.color) {
+                moves.push(target);
+            }
+        }
+
+        return moves.length > 0 ? moves : null;
+    }
+
+    getPassantCapture(table: Board, initialPos: [number, number]): Array<[number, number]> | null {
+        const currentPiece = table.pieces[initialPos[0]][initialPos[1]];
+        if (!currentPiece) {
+            return null;
+        }
+
+        if ((currentPiece.color === 'white' && initialPos[0] !== 3) || (currentPiece.color === 'black' && initialPos[0] !== 4)) {
+            return null;
+        }
+
+        const direction = this.getDirection(currentPiece.color);
+        const moves: [number, number][] = [];
+
+        for (const colOffset of [-1, 1]) {
+            if (!this.haveOpponentAdyacentPawn(table, initialPos, colOffset)) {
+                continue;
+            }
+
+            const target = this.calculateMove(table, initialPos, direction, colOffset);
+            if (target && !table.pieces[target[0]][target[1]]) {
+                moves.push(target);
+            }
+        }
+
+        return moves.length > 0 ? moves : null;
+    }
+
+    private getNormalMoves(table: Board, initialPos: [number, number]): [number, number][] {
+        const currentPiece = table.pieces[initialPos[0]][initialPos[1]];
+        if (!currentPiece) {
+            return [];
+        }
+
+        const target = this.calculateMove(table, initialPos, this.getDirection(currentPiece.color), 0);
+        if (!target || table.pieces[target[0]][target[1]]) {
+            return [];
+        }
+
+        return [target];
+    }
+
+    private haveOpponentAdyacentPawn(table: Board, currentPos: [number, number], colOffset: number): boolean {
+        const row = currentPos[0];
+        const col = currentPos[1] + colOffset;
+
+        if (!table.isInsideBoard(row, col)) {
+            return false;
+        }
+
+        const adyacentPiece = table.pieces[row][col];
+        return adyacentPiece instanceof Pawn && adyacentPiece.color !== this.color && adyacentPiece.hasInitialLargeMove;
+    }
+
+    private getDirection(color: string): number {
+        return color === 'white' ? -1 : 1;
+    }
+
+    private calculateMove(table: Board, initialPos: [number, number], rowOffset: number, colOffset: number): [number, number] | null {
+        const row = initialPos[0] + rowOffset;
+        const col = initialPos[1] + colOffset;
+
+        if (!table.isInsideBoard(row, col)) {
+            return null;
+        }
+
+        return [row, col];
+    }
+}

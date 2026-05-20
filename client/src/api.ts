@@ -2,7 +2,7 @@ import axios from "axios";
 
 // In Docker: /api proxies to backend:3000/api
 // Locally: http://localhost:3000/api
-const API_URL = process.env.NODE_ENV === "production" ? "/api" : "http://localhost:3000/api";
+const API_URL = import.meta.env.PROD ? "/api" : "http://localhost:3000/api";
 
 export const api = axios.create({
   baseURL: API_URL,

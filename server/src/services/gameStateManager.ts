@@ -43,11 +43,23 @@ class GameStateManager {
     }
   }
 
-  makeMove(gameId: string, from: [number, number], to: [number, number]): boolean {
+  makeMove(gameId: string, userId: number, from: [number, number], to: [number, number]): boolean {
     const gameSession = this.games.get(gameId);
     if (!gameSession) return false;
 
     const { board, game, session, currentTurn } = gameSession;
+    if (!board.isInsideBoard(from[0], from[1]) || !board.isInsideBoard(to[0], to[1])) {
+      return false;
+    }
+
+    if (currentTurn === 'white' && gameSession.player1Id !== userId) {
+      return false;
+    }
+
+    if (currentTurn === 'black' && gameSession.player2Id !== userId) {
+      return false;
+    }
+
     const piece = board.pieces[from[0]][from[1]];
 
     if (!piece || piece.color !== currentTurn) {

@@ -1,12 +1,31 @@
 import { Link, useNavigate } from "react-router-dom";
+import { logoutUser } from "../api";
+
+function getUsername() {
+  const rawUser = localStorage.getItem("user");
+  if (!rawUser) return null;
+
+  try {
+    return JSON.parse(rawUser).username as string;
+  } catch {
+    return null;
+  }
+}
 
 function Navbar() {
   const navigate = useNavigate();
-  const user = localStorage.getItem("user");
+  const username = getUsername();
 
-  function logout() {
-    localStorage.removeItem("user");
-    navigate("/login");
+  async function logout() {
+    try {
+      await logoutUser();
+    } catch {
+      // The local session is cleared even if the server was already unavailable.
+    } finally {
+      localStorage.removeItem("user");
+      localStorage.removeItem("userId");
+      navigate("/login");
+    }
   }
 
   return (
@@ -14,12 +33,12 @@ function Navbar() {
       <h2>Reino Chess</h2>
 
       <div className="nav-links">
-        {user ? (
+        {username ? (
           <>
             <Link to="/lobby">Lobby</Link>
             <Link to="/ranking">Ranking</Link>
             <Link to="/history">Historial</Link>
-            <span className="user-badge">♙ {user}</span>
+            <span className="user-badge">♙ {username}</span>
             <button onClick={logout}>Salir</button>
           </>
         ) : (

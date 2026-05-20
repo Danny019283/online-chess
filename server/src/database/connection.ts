@@ -3,6 +3,10 @@ import { DataSource } from 'typeorm';
 import { UserEntity } from '../entities/UserEntity';
 import { GameEntity } from '../entities/GameEntity';
 
+const synchronize =
+  process.env.DB_SYNCHRONIZE === 'true' ||
+  (process.env.DB_SYNCHRONIZE !== 'false' && process.env.NODE_ENV !== 'production');
+
 export const AppDataSource = new DataSource({
   type: 'postgres',
   host: process.env.DB_HOST || 'localhost',
@@ -10,7 +14,7 @@ export const AppDataSource = new DataSource({
   username: process.env.DB_USER || 'postgres',
   password: process.env.DB_PASSWORD || 'postgres',
   database: process.env.DB_NAME || 'chess_db',
-  synchronize: process.env.NODE_ENV === 'development',
+  synchronize,
   logging: false,
   entities: [UserEntity, GameEntity],
 });

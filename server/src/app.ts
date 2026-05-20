@@ -3,14 +3,30 @@ import express from 'express';
 import cors from 'cors';
 import session from 'express-session';
 import connectPgSimple from 'connect-pg-simple';
-import { AppDataSource } from './database/connection';
 import authRoutes from './routes/authRoutes';
 import gameRoutes from './routes/gameRoutes';
 import { Pool } from 'pg';
 
 const app = express();
 
-app.use(cors({ origin: 'http://localhost', credentials: true }));
+const allowedOrigins = [
+  'http://localhost',
+  'http://localhost:80',
+  'http://localhost:5173',
+  process.env.CLIENT_ORIGIN,
+].filter(Boolean) as string[];
+
+app.use(cors({
+  origin(origin, callback) {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+      return;
+    }
+
+    callback(new Error('Not allowed by CORS'));
+  },
+  credentials: true,
+}));
 app.use(express.json());
 
 const pgSession = connectPgSimple(session);
@@ -24,7 +40,7 @@ const pool = new Pool({
 
 app.use(
   session({
-    store: new pgSession({ pool }),
+    store: new pgSession({ pool, createTableIfMissing: true }),
     secret: process.env.SESSION_SECRET || 'dev_secret',
     resave: false,
     saveUninitialized: false,

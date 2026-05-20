@@ -1,5 +1,5 @@
 import { Link, useNavigate } from "react-router-dom";
-import { useState } from "react";
+import { useState, type FormEvent } from "react";
 import { registerUser } from "../api";
 
 function Register() {
@@ -10,7 +10,7 @@ function Register() {
   const [mensaje, setMensaje] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
-  async function register(e: React.FormEvent) {
+  async function register(e: FormEvent) {
     e.preventDefault();
 
     if (username.trim() === "" || password.trim() === "") {
@@ -20,12 +20,12 @@ function Register() {
 
     setIsLoading(true);
     try {
-      await registerUser({ username, password });
+      const response = await registerUser({ username, password });
+      localStorage.setItem("user", JSON.stringify(response.data));
+      localStorage.setItem("userId", response.data.userId.toString());
 
       setMensaje("Usuario registrado correctamente");
-      setTimeout(() => {
-        navigate("/login");
-      }, 800);
+      navigate("/lobby");
     } catch (error: any) {
       const errorMsg = error.response?.data?.error || "Error al registrarse";
       setMensaje(errorMsg);

@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { useState } from "react";
+import { useState, type FormEvent } from "react";
 import { createGame, joinGame } from "../api";
 
 function Lobby() {
@@ -18,7 +18,7 @@ function Lobby() {
     }
   }
 
-  async function unirsePartida(e: React.FormEvent) {
+  async function unirsePartida(e: FormEvent) {
     e.preventDefault();
 
     if (roomId.trim() === "") {
@@ -28,8 +28,8 @@ function Lobby() {
 
     setIsLoading(true);
     try {
-      await joinGame(roomId);
-      navigate(`/game/${roomId}`);
+      await joinGame(roomId.trim());
+      navigate(`/game/${roomId.trim()}`);
     } catch (error: any) {
       const errorMsg = error.response?.data?.error || "Error al unirse a la partida";
       alert(errorMsg);
@@ -41,9 +41,7 @@ function Lobby() {
     <main className="lobby-container">
       <section className="lobby-header">
         <h1>Lobby de partidas</h1>
-        <p>
-          Cree una partida nueva o únase a una sala existente para jugar 1 vs 1.
-        </p>
+        <p>Cree una partida nueva o únase a una sala existente para jugar 1 vs 1.</p>
       </section>
 
       <section className="lobby-content">
@@ -61,7 +59,7 @@ function Lobby() {
           <form onSubmit={unirsePartida}>
             <input
               type="text"
-              placeholder="Ejemplo: 1025"
+              placeholder="Código de sala"
               value={roomId}
               onChange={(e) => setRoomId(e.target.value)}
               disabled={isLoading}

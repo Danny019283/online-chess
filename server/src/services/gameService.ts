@@ -1,14 +1,11 @@
 import { AppDataSource } from '../database/connection';
 import { GameEntity } from '../entities/GameEntity';
 import { gameStateManager, GameSession } from './gameStateManager';
-import { v4 as uuidv4 } from 'uuid';
 
 export class GameService {
   private gameRepository = AppDataSource.getRepository(GameEntity);
 
   async createGame(player1Id: number): Promise<string> {
-    const gameId = uuidv4();
-
     const game = this.gameRepository.create({
       player1_id: player1Id,
       status: 'waiting',
@@ -29,9 +26,15 @@ export class GameService {
     game.player2_id = player2Id;
     game.status = 'active';
 
+    if (!gameStateManager.getGame(gameId)) {
+      gameStateManager.createGame(gameId, game.player1_id);
+    }
     gameStateManager.setPlayer2(gameId, player2Id);
 
-    return this.gameRepository.save(game);
+    await this.gameRepository.save(game);
+    const updatedGame = await this.getGame(gameId);
+    if (!updatedGame) throw new Error('Game not found');
+    return updatedGame;
   }
 
   async getGame(gameId: string): Promise<GameEntity | null> {
@@ -45,13 +48,26 @@ export class GameService {
     return gameStateManager.getGame(gameId);
   }
 
-  makeMove(gameId: string, from: [number, number], to: [number, number]): boolean {
-    return gameStateManager.makeMove(gameId, from, to);
+  async makeMove(gameId: string, userId: number, from: [number, number], to: [number, number]): Promise<boolean> {
+    const success = gameStateManager.makeMove(gameId, userId, from, to);
+    if (!success) return false;
+
+    const game = await this.gameRepository.findOne({ where: { id: gameId } });
+    const session = gameStateManager.getGame(gameId);
+
+    if (game && session?.session.hasWinner()) {
+      game.status = 'finished';
+      game.winner_id = session.session.getWinner() === 'white' ? session.player1Id : session.player2Id;
+      await this.gameRepository.save(game);
+    }
+
+    return true;
   }
 
   getLegalMoves(gameId: string, position: [number, number]): [number, number][] {
     const session = gameStateManager.getGame(gameId);
     if (!session) return [];
+    if (!session.board.isInsideBoard(position[0], position[1])) return [];
 
     const piece = session.board.pieces[position[0]][position[1]];
     if (!piece) return [];

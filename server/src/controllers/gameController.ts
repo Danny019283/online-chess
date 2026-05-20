@@ -75,12 +75,19 @@ export class GameController {
         return;
       }
 
-      if (!from || !to || typeof from.row !== 'number' || typeof from.col !== 'number') {
+      if (
+        !from ||
+        !to ||
+        typeof from.row !== 'number' ||
+        typeof from.col !== 'number' ||
+        typeof to.row !== 'number' ||
+        typeof to.col !== 'number'
+      ) {
         res.status(400).json({ error: 'Invalid move format' });
         return;
       }
 
-      const success = gameService.makeMove(gameId, [from.row, from.col], [to.row, to.col]);
+      const success = await gameService.makeMove(gameId, userId, [from.row, from.col], [to.row, to.col]);
 
       const game = await gameService.getGame(gameId);
       const gameSession = gameService.getGameState(gameId);

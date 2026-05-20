@@ -28,7 +28,7 @@ export class Knight extends Piece{
             //calcula coordenadas en tablero
             const coordXOnTable: number = initialPos[0]+coord[0];
             const coordYOnTable: number = initialPos[1]+coord[1];
-            if(this.isInsideBoard(coordXOnTable, coordYOnTable)){
+            if(!table.isInsideBoard(coordXOnTable, coordYOnTable)){
                 continue
             }
             const coordOnTable: [number, number] = [coordXOnTable, coordYOnTable]
@@ -50,9 +50,4 @@ export class Knight extends Piece{
             }
         return validMoves;
     }
-    private isInsideBoard(row: number, col: number): boolean {
-        return row >= 0 && row < 8 && col >= 0 && col < 8;
-
-    }
-    
 }

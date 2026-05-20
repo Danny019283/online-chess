@@ -1,80 +1,117 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useParams } from "react-router-dom";
-import { socket } from "../socket";
 import ChessBoard from "../components/ChessBoard";
+import { getGameState, makeMove, type GameStateDTO, type PieceDTO } from "../api";
+
+const emptyBoard: string[][] = Array.from({ length: 8 }, () => Array(8).fill(""));
+
+const pieceSymbols: Record<PieceDTO["color"], Record<PieceDTO["type"], string>> = {
+  white: {
+    King: "♔",
+    Queen: "♕",
+    Tower: "♖",
+    Bishop: "♗",
+    Knight: "♘",
+    Pawn: "♙",
+  },
+  black: {
+    King: "♚",
+    Queen: "♛",
+    Tower: "♜",
+    Bishop: "♝",
+    Knight: "♞",
+    Pawn: "♟",
+  },
+};
+
+function boardToSymbols(board: (PieceDTO | null)[][]) {
+  return board.map((row) =>
+    row.map((piece) => (piece ? pieceSymbols[piece.color][piece.type] : ""))
+  );
+}
+
+function getStoredUser(): { userId: number; username: string } | null {
+  const rawUser = localStorage.getItem("user");
+  if (!rawUser) return null;
+
+  try {
+    return JSON.parse(rawUser);
+  } catch {
+    return null;
+  }
+}
 
 function Game() {
   const { roomId } = useParams();
+  const currentUser = useMemo(() => getStoredUser(), []);
 
-  const [mensaje, setMensaje] = useState("Esperando conexión con el servidor...");
-  const [turno, setTurno] = useState("Blancas");
-  const [selectedSquare, setSelectedSquare] = useState<[number, number] | null>(
-    null
-  );
+  const [message, setMessage] = useState("Cargando partida...");
+  const [selectedSquare, setSelectedSquare] = useState<[number, number] | null>(null);
+  const [gameState, setGameState] = useState<GameStateDTO | null>(null);
+  const [board, setBoard] = useState<string[][]>(emptyBoard);
+  const [isMoving, setIsMoving] = useState(false);
 
-  const [board, setBoard] = useState<string[][]>([
-    ["♜", "♞", "♝", "♛", "♚", "♝", "♞", "♜"],
-    ["♟", "♟", "♟", "♟", "♟", "♟", "♟", "♟"],
-    ["", "", "", "", "", "", "", ""],
-    ["", "", "", "", "", "", "", ""],
-    ["", "", "", "", "", "", "", ""],
-    ["", "", "", "", "", "", "", ""],
-    ["♙", "♙", "♙", "♙", "♙", "♙", "♙", "♙"],
-    ["♖", "♘", "♗", "♕", "♔", "♗", "♘", "♖"],
-  ]);
+  const playerColor = useMemo(() => {
+    if (!gameState || !currentUser) return null;
+    if (gameState.player1.id === currentUser.userId) return "white";
+    if (gameState.player2?.id === currentUser.userId) return "black";
+    return null;
+  }, [currentUser, gameState]);
 
-  const user = localStorage.getItem("user");
+  const loadGame = useCallback(async (showErrors = false) => {
+    if (!roomId) return;
+
+    try {
+      const response = await getGameState(roomId);
+      setGameState(response.data);
+      setBoard(boardToSymbols(response.data.board));
+
+      if (response.data.checkmate) {
+        setMessage("Jaque mate. La partida terminó.");
+      } else if (response.data.check) {
+        setMessage("Jaque.");
+      } else if (response.data.status === "waiting") {
+        setMessage("Esperando a que otro jugador se una.");
+      } else {
+        setMessage("Partida lista.");
+      }
+    } catch (error: any) {
+      if (showErrors) {
+        setMessage(error.response?.data?.error || "No se pudo cargar la partida.");
+      }
+    }
+  }, [roomId]);
 
   useEffect(() => {
-    socket.connect();
+    loadGame(true);
+    const intervalId = window.setInterval(() => loadGame(false), 2000);
 
-    socket.emit("joinRoom", {
-      roomId,
-      username: user,
-    });
+    return () => window.clearInterval(intervalId);
+  }, [loadGame]);
 
-    socket.on("playerJoined", (data: { message: string }) => {
-      setMensaje(data.message);
-    });
+  async function handleSquareClick(row: number, col: number) {
+    if (!roomId || !gameState || isMoving) return;
 
-    socket.on(
-      "boardUpdated",
-      (data: { board: string[][]; turn?: string; message?: string }) => {
-        setBoard(data.board);
-
-        if (data.turn) {
-          setTurno(data.turn);
-        }
-
-        if (data.message) {
-          setMensaje(data.message);
-        }
-      }
-    );
-
-    socket.on("invalidMove", (data: { message: string }) => {
-      setMensaje(data.message);
-    });
-
-    return () => {
-      socket.off("playerJoined");
-      socket.off("boardUpdated");
-      socket.off("invalidMove");
-      socket.disconnect();
-    };
-  }, [roomId, user]);
-
-  function handleSquareClick(row: number, col: number) {
-    const piece = board[row][col];
+    const piece = gameState.board[row][col];
 
     if (selectedSquare === null) {
-      if (piece === "") {
-        setMensaje("Seleccione una pieza primero");
+      if (!piece) {
+        setMessage("Seleccione una pieza primero.");
+        return;
+      }
+
+      if (gameState.status !== "active") {
+        setMessage("La partida aún no está activa.");
+        return;
+      }
+
+      if (!playerColor || piece.color !== playerColor || gameState.turn !== playerColor) {
+        setMessage("No es su turno o esa pieza no le pertenece.");
         return;
       }
 
       setSelectedSquare([row, col]);
-      setMensaje(`Pieza seleccionada en fila ${row + 1}, columna ${col + 1}`);
+      setMessage(`Pieza seleccionada en fila ${row + 1}, columna ${col + 1}.`);
       return;
     }
 
@@ -82,55 +119,33 @@ function Game() {
 
     if (fromRow === row && fromCol === col) {
       setSelectedSquare(null);
-      setMensaje("Selección cancelada");
+      setMessage("Selección cancelada.");
       return;
     }
 
-    socket.emit("makeMove", {
-      roomId,
-      username: user,
-      from: [fromRow, fromCol],
-      to: [row, col],
-      piece: board[fromRow][fromCol],
-    });
+    setIsMoving(true);
+    try {
+      const response = await makeMove(roomId, {
+        from: { row: fromRow, col: fromCol },
+        to: { row, col },
+      });
 
-    moverPiezaTemporal(fromRow, fromCol, row, col);
+      if (response.data.gameState) {
+        setGameState(response.data.gameState);
+        setBoard(boardToSymbols(response.data.gameState.board));
+      }
 
-    setSelectedSquare(null);
-    setTurno(turno === "Blancas" ? "Negras" : "Blancas");
-    setMensaje("Movimiento enviado al servidor");
+      setMessage(response.data.gameState?.check ? "Movimiento realizado. Jaque." : "Movimiento realizado.");
+    } catch (error: any) {
+      setMessage(error.response?.data?.reason || error.response?.data?.error || "Movimiento inválido.");
+    } finally {
+      setSelectedSquare(null);
+      setIsMoving(false);
+    }
   }
 
-  function moverPiezaTemporal(
-    fromRow: number,
-    fromCol: number,
-    toRow: number,
-    toCol: number
-  ) {
-    const nuevoTablero = board.map((row) => [...row]);
-
-    nuevoTablero[toRow][toCol] = nuevoTablero[fromRow][fromCol];
-    nuevoTablero[fromRow][fromCol] = "";
-
-    setBoard(nuevoTablero);
-  }
-
-  function reiniciarTablero() {
-    setBoard([
-      ["♜", "♞", "♝", "♛", "♚", "♝", "♞", "♜"],
-      ["♟", "♟", "♟", "♟", "♟", "♟", "♟", "♟"],
-      ["", "", "", "", "", "", "", ""],
-      ["", "", "", "", "", "", "", ""],
-      ["", "", "", "", "", "", "", ""],
-      ["", "", "", "", "", "", "", ""],
-      ["♙", "♙", "♙", "♙", "♙", "♙", "♙", "♙"],
-      ["♖", "♘", "♗", "♕", "♔", "♗", "♘", "♖"],
-    ]);
-
-    setTurno("Blancas");
-    setSelectedSquare(null);
-    setMensaje("Tablero reiniciado visualmente");
-  }
+  const turnLabel = gameState ? (gameState.turn === "white" ? "Blancas" : "Negras") : "Cargando";
+  const playerLabel = currentUser?.username || "Invitado";
 
   return (
     <main className="game-container">
@@ -143,27 +158,30 @@ function Game() {
           </p>
 
           <p>
-            <strong>Jugador:</strong> {user}
+            <strong>Jugador:</strong> {playerLabel}
           </p>
 
           <p>
-            <strong>Turno:</strong> {turno}
+            <strong>Color:</strong> {playerColor === "white" ? "Blancas" : playerColor === "black" ? "Negras" : "Espectador"}
           </p>
 
           <p>
-            <strong>Estado:</strong> {mensaje}
+            <strong>Turno:</strong> {turnLabel}
+          </p>
+
+          <p>
+            <strong>Estado:</strong> {message}
           </p>
         </div>
 
         <div className="rules-box">
-          <h3>Modo frontend</h3>
-          <p>
-            El tablero permite seleccionar piezas y enviar movimientos. La
-            validación real queda para el backend.
-          </p>
+          <h3>Juego conectado</h3>
+          <p>Los movimientos se validan en el backend y el tablero se actualiza automáticamente.</p>
         </div>
 
-        <button onClick={reiniciarTablero}>Reiniciar tablero visual</button>
+        <button onClick={() => loadGame(true)} disabled={isMoving}>
+          Actualizar tablero
+        </button>
       </section>
 
       <section className="board">

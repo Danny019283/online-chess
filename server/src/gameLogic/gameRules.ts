@@ -1,6 +1,8 @@
 import { Piece } from "../core_entities/piece";
 import { Session } from "../core_entities/session";
 import { King } from "../core_entities/pieces/king"
+import { Pawn } from "../core_entities/pieces/pawn";
+import { Tower } from "../core_entities/pieces/tower";
 
 class Game {
     // Contadores de capturas
@@ -41,7 +43,9 @@ class Game {
                 if (piece && piece.color !== kingColor) {
                     // Obtiene movimientos validos
                     const validMoves: Array<[number, number]> | null =
-                        piece.getValidMovements(table, [row, col]);
+                        piece instanceof Pawn
+                            ? piece.getCaptureMoves(table, [row, col])
+                            : piece.getValidMovements(table, [row, col]);
                     // Si no tiene movimientos
                     if (!validMoves) {
                         continue;
@@ -170,6 +174,26 @@ class Game {
             return false;
         }
 
+        const isPawnLargeMove = piece instanceof Pawn && Math.abs(to[0] - from[0]) === 2;
+        const isCastlingMove = piece instanceof King && Math.abs(to[1] - from[1]) === 2;
+
+        let towerMove: { tower: Piece; from: [number, number]; to: [number, number] } | null = null;
+        if (isCastlingMove) {
+            const towerFromCol = to[1] > from[1] ? 7 : 0;
+            const towerToCol = to[1] > from[1] ? 5 : 3;
+            const tower = table.pieces[from[0]][towerFromCol];
+
+            if (!(tower instanceof Tower) || tower.color !== piece.color) {
+                return false;
+            }
+
+            towerMove = {
+                tower,
+                from: [from[0], towerFromCol],
+                to: [from[0], towerToCol],
+            };
+        }
+
         // Guarda pieza original del destino
         const originalDestinationPiece: Piece | null = table.pieces[to[0]][to[1]];
 
@@ -178,6 +202,11 @@ class Game {
 
         // Limpia posicion anterior
         table.pieces[from[0]][from[1]] = null;
+
+        if (towerMove) {
+            table.pieces[towerMove.to[0]][towerMove.to[1]] = towerMove.tower;
+            table.pieces[towerMove.from[0]][towerMove.from[1]] = null;
+        }
 
         // Verifica si el movimiento deja al propio rey en jaque
         const ownKingInCheck: boolean = this.isCheck(table, piece.color);
@@ -188,8 +217,20 @@ class Game {
             // Revierte movimiento
             table.pieces[from[0]][from[1]] = piece;
             table.pieces[to[0]][to[1]] = originalDestinationPiece;
+            if (towerMove) {
+                table.pieces[towerMove.from[0]][towerMove.from[1]] = towerMove.tower;
+                table.pieces[towerMove.to[0]][towerMove.to[1]] = null;
+            }
 
             return false;
+        }
+
+        if (piece instanceof Pawn) {
+            piece.hasInitialLargeMove = isPawnLargeMove;
+        }
+
+        if (towerMove) {
+            towerMove.tower.moved = true;
         }
 
         // Si hay pieza enemiga se cuenta como captura

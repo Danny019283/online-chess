@@ -1,5 +1,5 @@
 import { Link, useNavigate } from "react-router-dom";
-import { useState } from "react";
+import { useState, type FormEvent } from "react";
 import { loginUser } from "../api";
 
 function Login() {
@@ -10,7 +10,7 @@ function Login() {
   const [mensaje, setMensaje] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
-  async function login(e: React.FormEvent) {
+  async function login(e: FormEvent) {
     e.preventDefault();
 
     if (username.trim() === "" || password.trim() === "") {

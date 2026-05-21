@@ -7,33 +7,26 @@ export class GameService {
 
   async createGame(player1Id: number): Promise<string> {
     const roomId = generateRoomId();
-    const game = this.gameRepository.create({
-      id: roomId,
-      player1_id: player1Id,
-      status: 'waiting',
-    });
-
-    await this.gameRepository.save(game);
     gameStateManager.createGame(roomId, player1Id);
-
     return roomId;
   }
 
   async joinGame(gameId: string, player2Id: number): Promise<Session> {
-    const game = await this.gameRepository.findOne({ where: { id: gameId } });
-    if (!game) throw new Error('Game not found');
-    if (game.status !== 'waiting') throw new Error('Game is not waiting for players');
-    if (game.player1_id === player2Id) throw new Error('Cannot join your own game');
+    const gameSession = gameStateManager.getGame(gameId);
+    if (!gameSession) throw new Error('Game not found');
+    if (gameSession.player2Id) throw new Error('Game is not waiting for players');
+    if (gameSession.player1Id === player2Id) throw new Error('Cannot join your own game');
 
-    game.player2_id = player2Id;
-    game.status = 'active';
-
-    if (!gameStateManager.getGame(gameId)) {
-      gameStateManager.createGame(gameId, game.player1_id);
-    }
-    gameStateManager.setPlayer2(gameId, player2Id);
+    const game = this.gameRepository.create({
+      id: gameId,
+      player1_id: gameSession.player1Id,
+      player2_id: player2Id,
+      status: 'active',
+    });
 
     await this.gameRepository.save(game);
+    gameStateManager.setPlayer2(gameId, player2Id);
+
     const updatedGame = await this.getGame(gameId);
     if (!updatedGame) throw new Error('Game not found');
     return updatedGame;
@@ -118,6 +111,33 @@ export class GameService {
     }
 
     return session.game.getLegalMovements(session.board, position);
+  }
+
+  async leaveGame(gameId: string, userId: number): Promise<void> {
+    const gameSession = gameStateManager.getGame(gameId);
+    if (!gameSession) return;
+
+    const isPlayer1 = gameSession.player1Id === userId;
+    const isPlayer2 = gameSession.player2Id === userId;
+    if (!isPlayer1 && !isPlayer2) return;
+
+    const game = await this.gameRepository.findOne({ where: { id: gameId } });
+
+    if (!gameSession.player2Id) {
+      gameStateManager.deleteGame(gameId);
+      return;
+    }
+
+    const winner = isPlayer1 ? 'black' : 'white';
+    gameSession.session._winner = winner;
+
+    if (game) {
+      game.status = 'finished';
+      game.winner_id = this.getWinnerIdByColor(gameSession, winner);
+      await this.gameRepository.save(game);
+    }
+
+    gameStateManager.deleteGame(gameId);
   }
 
   async getWinner(gameId: string): Promise<number | null> {

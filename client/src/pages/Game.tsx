@@ -6,6 +6,7 @@ import {
   getGameState,
   getLegalMoves,
   makeMove,
+  leaveGame,
   type GameStateDTO,
   type PieceDTO,
   type PositionDTO,
@@ -333,6 +334,27 @@ function Game() {
     }
   }
 
+  async function handleLeave() {
+    if (!roomId || !currentUser) return;
+    try {
+      await leaveGame(roomId);
+      window.location.href = "/lobby";
+    } catch {
+      setMessage("No se pudo abandonar la partida.");
+    }
+  }
+
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      if (!roomId || !currentUser) return;
+      if (gameState?.status === "finished") return;
+      navigator.sendBeacon(`${window.location.origin}/api/games/${roomId}/leave`);
+    };
+
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+  }, [roomId, currentUser, gameState?.status]);
+
   const isWaiting = gameState?.status === "waiting" && !gameState.player2;
 
   const turnLabel = gameState ? (gameState.turn === "white" ? "Blancas" : "Negras") : "Cargando";
@@ -382,6 +404,12 @@ function Game() {
           <p>
             <strong>Estado:</strong> {message}
           </p>
+
+          {gameState?.status !== "finished" && (
+            <button className="leave-btn" onClick={handleLeave}>
+              Abandonar
+            </button>
+          )}
         </div>
       </section>
 

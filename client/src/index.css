@@ -616,3 +616,22 @@ th {
   font-weight: 700;
   color: #374151;
 }
+
+.leave-btn {
+  width: 100%;
+  min-height: 44px;
+  padding: 12px 14px;
+  margin-top: 13px;
+  border: 0;
+  border-radius: 8px;
+  color: white;
+  background: var(--danger);
+  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.25);
+  cursor: pointer;
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.leave-btn:hover {
+  background: #b91c1c;
+}

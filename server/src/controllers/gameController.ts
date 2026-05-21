@@ -147,6 +147,23 @@ export class GameController {
       res.status(500).json({ error: error.message });
     }
   }
+
+  async leaveGame(req: Request, res: Response): Promise<void> {
+    try {
+      const { gameId } = req.params;
+      const userId = (req as any).session.userId;
+
+      if (!userId) {
+        res.status(401).json({ error: 'Unauthorized' });
+        return;
+      }
+
+      await gameService.leaveGame(gameId, userId);
+      res.status(200).json({ message: 'Game left successfully' });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  }
 }
 
 export const gameController = new GameController();

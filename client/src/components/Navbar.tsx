@@ -30,7 +30,7 @@ function Navbar() {
 
   return (
     <nav className="navbar">
-      <h2>Reino Chess</h2>
+      <h2>Chesstico</h2>
 
       <div className="nav-links">
         {username ? (

@@ -128,6 +128,10 @@ export async function getLegalMoves(gameId: string, row: number, col: number) {
   });
 }
 
+export async function leaveGame(gameId: string) {
+  return api.post(`/games/${gameId}/leave`);
+}
+
 // Legacy endpoints (keep for compatibility)
 export async function getRanking() {
   return api.get<RankingPlayer[]>("/ranking");

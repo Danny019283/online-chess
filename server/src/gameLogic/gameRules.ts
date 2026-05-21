@@ -3,6 +3,9 @@ import { Session } from "../entities/session";
 import { King } from "../entities/pieces/king"
 import { Pawn } from "../entities/pieces/pawn";
 import { Tower } from "../entities/pieces/tower";
+import { Queen } from "../entities/pieces/queen";
+import { Bishop } from "../entities/pieces/bishop";
+import { Knight } from "../entities/pieces/knight";
 import { Board } from "../entities/table";
 
 class Game {
@@ -212,7 +215,8 @@ class Game {
         table: any,
         session: Session,
         from: [number, number],
-        to: [number, number]
+        to: [number, number],
+        promotionPiece?: "queen" | "rook" | "bishop" | "knight"
     ): boolean {
 
         // Valida posiciones dentro del tablero
@@ -306,6 +310,13 @@ class Game {
             }
         }
 
+        // Coronación del peón
+        if (piece instanceof Pawn && piece.hasPromotion(to)) {
+            const chosenPiece = promotionPiece || "queen";
+            const promotedPiece = this.createPromotedPiece(chosenPiece, piece.color);
+            table.pieces[to[0]][to[1]] = promotedPiece;
+        }
+
         // Determina color enemigo
         const enemyColor: string = piece.color === "white" ? "black" : "white";
 
@@ -318,6 +329,22 @@ class Game {
 
         // Movimiento valido
         return true;
+    }
+
+    private createPromotedPiece(
+        type: "queen" | "rook" | "bishop" | "knight",
+        color: string
+    ): Piece {
+        switch (type) {
+            case "queen":
+                return new Queen(color);
+            case "rook":
+                return new Tower(color);
+            case "bishop":
+                return new Bishop(color);
+            case "knight":
+                return new Knight(color);
+        }
     }
 
     // Retorna las capturas hechas por blancas

@@ -15,6 +15,7 @@ export interface MoveRecord {
     userId: number;
     color: 'white' | 'black';
     movedAt: string;
+    promotion?: 'queen' | 'rook' | 'bishop' | 'knight';
 }
 
 @Entity('games')

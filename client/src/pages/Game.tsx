@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
 import ChessBoard from "../components/ChessBoard";
+import PromotionModal from "../components/PromotionModal";
 import {
   getGameState,
   getLegalMoves,
@@ -68,6 +69,18 @@ function Game() {
   const [gameState, setGameState] = useState<GameStateDTO | null>(null);
   const [board, setBoard] = useState<string[][]>(emptyBoard);
   const [isMoving, setIsMoving] = useState(false);
+  const [pendingPromotion, setPendingPromotion] = useState<{
+    from: { row: number; col: number };
+    to: { row: number; col: number };
+  } | null>(null);
+  const pendingPromotionRef = useRef<typeof pendingPromotion>(null);
+
+  const setPendingPromotionWithRef = (
+    value: typeof pendingPromotion
+  ) => {
+    setPendingPromotion(value);
+    pendingPromotionRef.current = value;
+  };
 
   const playerColor = useMemo(() => {
     if (!gameState || !currentUser) return null;
@@ -138,6 +151,7 @@ function Game() {
   useEffect(() => {
     const intervalId = window.setInterval(async () => {
       if (!roomId) return;
+      if (pendingPromotionRef.current) return;
       try {
         const response = await getGameState(roomId);
         setGameState(response.data);
@@ -177,6 +191,8 @@ function Game() {
 
   async function handleSquareClick(row: number, col: number) {
     if (!roomId || !gameState || isMoving) return;
+
+    if (pendingPromotion) return;
 
     const piece = gameState.board[row][col];
 
@@ -243,11 +259,58 @@ function Game() {
       return;
     }
 
+    const movingPiece = gameState.board[fromRow][fromCol];
+    const isPawnPromotion = movingPiece?.type === "Pawn" && (row === 0 || row === 7);
+
+    if (isPawnPromotion && !pendingPromotion) {
+      setPendingPromotionWithRef({
+        from: { row: fromRow, col: fromCol },
+        to: { row, col },
+      });
+      updateSelectedSquare(null);
+      setLegalMoves([]);
+      return;
+    }
+
     setIsMoving(true);
     try {
       const response = await makeMove(roomId, {
         from: { row: fromRow, col: fromCol },
         to: { row, col },
+      });
+
+      if (response.data.gameState) {
+        setGameState(response.data.gameState);
+        setBoard(boardToSymbols(response.data.gameState.board));
+        updateSelectedSquare(null);
+        setLegalMoves([]);
+      }
+
+      const nextState = response.data.gameState;
+      if (nextState?.winnerName) {
+        setMessage(`Partida finalizada. Ganador: ${nextState.winnerName}.`);
+      } else {
+        setMessage(nextState?.check ? "Movimiento realizado. Jaque." : "Movimiento realizado.");
+      }
+    } catch (error: any) {
+      setMessage(error.response?.data?.reason || error.response?.data?.error || "Movimiento invalido.");
+    } finally {
+      setIsMoving(false);
+    }
+  }
+
+  async function handlePromotionSelect(pieceType: "queen" | "rook" | "bishop" | "knight") {
+    if (!roomId || !pendingPromotion || !gameState) return;
+
+    const { from, to } = pendingPromotion;
+    setPendingPromotionWithRef(null);
+    setIsMoving(true);
+
+    try {
+      const response = await makeMove(roomId, {
+        from: { row: from.row, col: from.col },
+        to: { row: to.row, col: to.col },
+        promotionPiece: pieceType,
       });
 
       if (response.data.gameState) {
@@ -339,6 +402,13 @@ function Game() {
           onSquareClick={handleSquareClick}
         />
       </section>
+
+      {pendingPromotion && gameState && (
+        <PromotionModal
+          color={playerColor === "black" ? "black" : "white"}
+          onSelect={handlePromotionSelect}
+        />
+      )}
     </main>
   );
 }

@@ -135,4 +135,8 @@ export class Pawn extends Piece {
 
         return [row, col];
     }
+
+    hasPromotion(to: [number, number]): boolean {
+        return (this.color === 'white' && to[0] === 0) || (this.color === 'black' && to[0] === 7);
+    }
 }

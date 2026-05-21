@@ -57,13 +57,19 @@ export class GameService {
     return gameStateManager.getGame(gameId);
   }
 
-  async makeMove(gameId: string, userId: number, from: [number, number], to: [number, number]): Promise<boolean> {
+  async makeMove(
+    gameId: string,
+    userId: number,
+    from: [number, number],
+    to: [number, number],
+    promotionPiece?: "queen" | "rook" | "bishop" | "knight"
+  ): Promise<boolean> {
     await this.refreshClock(gameId);
     const gameSession = gameStateManager.getGame(gameId);
     if (gameSession?.session.hasWinner()) return false;
 
     const movingColor = gameSession?.currentTurn;
-    const success = gameStateManager.makeMove(gameId, userId, from, to);
+    const success = gameStateManager.makeMove(gameId, userId, from, to, promotionPiece);
     if (!success) return false;
 
     const game = await this.gameRepository.findOne({ where: { id: gameId } });
@@ -79,6 +85,7 @@ export class GameService {
           userId,
           color: movingColor,
           movedAt: new Date().toISOString(),
+          promotion: promotionPiece,
         },
       ];
     }

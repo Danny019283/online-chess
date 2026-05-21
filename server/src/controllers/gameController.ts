@@ -68,7 +68,7 @@ export class GameController {
   async makeMove(req: Request, res: Response): Promise<void> {
     try {
       const { gameId } = req.params;
-      const { from, to } = req.body;
+      const { from, to, promotionPiece } = req.body;
       const userId = (req as any).session.userId;
 
       if (!userId) {
@@ -88,7 +88,18 @@ export class GameController {
         return;
       }
 
-      const success = await gameService.makeMove(gameId, userId, [from.row, from.col], [to.row, to.col]);
+      const validPromotions = ['queen', 'rook', 'bishop', 'knight'];
+      const promotion = promotionPiece && validPromotions.includes(promotionPiece)
+        ? promotionPiece
+        : undefined;
+
+      const success = await gameService.makeMove(
+        gameId,
+        userId,
+        [from.row, from.col],
+        [to.row, to.col],
+        promotion
+      );
 
       const game = await gameService.getGame(gameId);
       const gameSession = gameService.getGameState(gameId);

@@ -54,6 +54,7 @@ export type GameStateDTO = {
 export type MoveDTO = {
   from: PositionDTO;
   to: PositionDTO;
+  promotionPiece?: "queen" | "rook" | "bishop" | "knight";
 };
 
 export type MoveResultDTO = {

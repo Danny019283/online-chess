@@ -85,7 +85,13 @@ class GameStateManager {
     return this.applyClock(gameSession);
   }
 
-  makeMove(gameId: string, userId: number, from: [number, number], to: [number, number]): boolean {
+  makeMove(
+    gameId: string,
+    userId: number,
+    from: [number, number],
+    to: [number, number],
+    promotionPiece?: "queen" | "rook" | "bishop" | "knight"
+  ): boolean {
     const gameSession = this.games.get(gameId);
     if (!gameSession) return false;
 
@@ -119,7 +125,7 @@ class GameStateManager {
       return false;
     }
 
-    const success = game.movePiece(board, session, from, to);
+    const success = game.movePiece(board, session, from, to, promotionPiece);
     if (success) {
       piece.moved = true;
       gameSession.currentTurn = currentTurn === 'white' ? 'black' : 'white';

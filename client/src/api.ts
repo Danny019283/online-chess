@@ -1,8 +1,19 @@
 import axios from "axios";
 
-// In Docker: /api proxies to backend:3000/api
-// Locally: http://localhost:3000/api
-const API_URL = import.meta.env.PROD ? "/api" : "http://localhost:3000/api";
+// Detect API URL based on environment
+let API_URL: string;
+
+if (import.meta.env.PROD) {
+  // In production/Docker: /api proxies to backend:3000/api
+  API_URL = "/api";
+} else {
+  // In development: use the current hostname/IP
+  const protocol = window.location.protocol;
+  const hostname = window.location.hostname;
+  const port = hostname === 'localhost' || hostname === '127.0.0.1' ? ':3000' : ':3000';
+  
+  API_URL = `${protocol}//${hostname}${port}/api`;
+}
 
 export const api = axios.create({
   baseURL: API_URL,
